@@ -2,10 +2,10 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const connStr = process.env.DATABASE_URL || 'postgresql://localhost:5432/intranet_academica';
-const isRailway = connStr.includes('railway');
+const isRemote = connStr.includes('railway') || connStr.includes('render') || connStr.includes('neon');
 const pool = new Pool({
   connectionString: connStr,
-  ssl: isRailway ? { rejectUnauthorized: false } : false,
+  ssl: isRemote ? { rejectUnauthorized: false } : false,
 });
 
 async function initDb() {
