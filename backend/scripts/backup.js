@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost:5432/intranet_academica';
-const pool = new Pool({ connectionString: DATABASE_URL, ssl: DATABASE_URL.includes('railway') ? { rejectUnauthorized: false } : false });
+const isRemote = DATABASE_URL.includes('railway') || DATABASE_URL.includes('render') || DATABASE_URL.includes('neon');
+const pool = new Pool({ connectionString: DATABASE_URL, ssl: isRemote ? { rejectUnauthorized: false } : false });
 
 async function backup() {
   const client = await pool.connect();

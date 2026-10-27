@@ -284,11 +284,23 @@ GRANT ALL PRIVILEGES ON DATABASE intranet_academica TO intranet_user;
 
 ---
 
-### Paso G: Subir tu código al servidor
+### Paso G: Subir tu código a GitHub
 
-**Opción 1 - Desde GitHub (recomendado):**
+#### G.1 — Compilar el frontend
 
-Primero sube tu código a GitHub desde tu PC:
+Haz doble click en `DEPLOY.bat` o ejecuta:
+```
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica\frontend"
+npm run build
+```
+
+Luego copia el build al backend:
+```
+xcopy /E /I /Y frontend\build backend\public
+```
+
+#### G.2 — Inicializar Git en tu proyecto
+
 ```
 cd "C:\Users\rodol\Downloads\claude video\intranet-academica"
 git init
@@ -296,22 +308,115 @@ git add .
 git commit -m "Intranet académica"
 ```
 
-Crea un repo en GitHub y sube:
+> Si te pide identidad, ejecuta primero:
+> ```
+> git config user.email "tu-email@gmail.com"
+> git config user.name "tu-usuario"
+> ```
+
+#### G.3 — Crear el repositorio en GitHub (MANUAL)
+
+1. Ve a **https://github.com/new**
+2. **Repository name**: pon un nombre (ej: `intra-net`)
+3. Déjalo en **Public**
+4. **NO marques** "Add a README", ni .gitignore, ni license — déjalo todo vacío
+5. Click **Create repository**
+
+#### G.4 — Conectar y subir
+
+Ejecuta estos comandos **uno por uno** en PowerShell (no uses `&&`, PowerShell no lo acepta):
+
 ```
-git remote add origin https://github.com/TU_USUARIO/intranet-academica.git
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica"
+```
+
+```
+git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
+```
+
+```
+git branch -M main
+```
+
+```
 git push -u origin main
 ```
 
-Luego en el servidor Oracle (por SSH):
-```bash
-cd ~
-git clone https://github.com/TU_USUARIO/intranet-academica.git
-cd intranet-academica
-```
+> Te pedirá tus credenciales de GitHub la primera vez.
 
-**Opción 2 - Compilar frontend antes de subir:**
+---
 
-En tu PC, haz doble click en `DEPLOY.bat` para compilar el frontend. Luego sube todo a GitHub.
+## Subir a Render (hosting gratis)
+
+Render ofrece hosting gratis. La app se "duerme" si nadie la usa por 15 minutos (tarda ~30 segundos en despertar), pero funciona bien para ~100 alumnos.
+
+### Paso R.1: Crear cuenta en Render
+
+1. Ve a **https://render.com**
+2. Click en **"Get Started for Free"**
+3. **Regístrate con tu cuenta de GitHub** (conecta directo con tus repos)
+
+### Paso R.2: Dar permisos a Render
+
+1. Cuando busques tu repo y diga "No repositories found"
+2. Click en **"Configure account"** o **"Connect GitHub"**
+3. Te lleva a GitHub → selecciona tu cuenta
+4. En permisos: elige **"All repositories"** o selecciona solo tu repo
+5. Click **"Install"** o **"Save"**
+
+### Paso R.3: Crear el Web Service
+
+1. En Render, click en **"New +"** → **"Web Service"**
+2. Selecciona tu repo (ej: `intra-net`)
+3. Configura así:
+
+| Campo | Valor |
+|-------|-------|
+| **Name** | `intranet-academica` |
+| **Region** | Oregon (o el más cercano) |
+| **Branch** | `main` |
+| **Root Directory** | `backend` |
+| **Runtime** | `Node` |
+| **Build Command** | `npm install` |
+| **Start Command** | `node server.js` |
+| **Instance Type** | **Free** |
+
+4. Click **"Create Web Service"**
+
+### Paso R.4: Agregar base de datos PostgreSQL
+
+1. En Render, click en **"New +"** → **"PostgreSQL"**
+2. Pon nombre: `intranet-db`
+3. Selecciona **Free** tier
+4. Click **Create Database**
+5. Espera a que se cree (~1 minuto)
+
+### Paso R.5: Copiar la Internal Database URL
+
+1. Ve a tu base de datos en Render (click en `intranet-db` en el dashboard)
+2. Baja hasta la sección **"Connections"**
+3. Busca **"Internal Database URL"** (está oculta con puntitos)
+4. Haz click en el **botón de copiar** (icono 📋 al lado derecho)
+   > ⚠️ NO copies la "External Database URL", debe ser la **Internal**
+
+### Paso R.6: Conectar la base de datos al Web Service
+
+1. Ve a tu Web Service → pestaña **"Environment"**
+2. Baja hasta **"Environment Variables"**
+3. Click en **"+ Add variable"**
+4. En **KEY** escribe exactamente: `DATABASE_URL`
+   > ⚠️ Cuidado: el KEY es solo el nombre `DATABASE_URL`, NO pegues la URL aquí
+5. En **VALUE** pega la Internal Database URL que copiaste (Ctrl+V)
+6. Click **"Save Changes"**
+
+### Paso R.7: Hacer el deploy
+
+1. En tu Web Service, arriba hay un botón morado **"Manual Deploy"**
+2. Click en **"Manual Deploy"** → **"Deploy latest commit"**
+3. Espera ~30 segundos a que el estado cambie a **"Live"** (verde)
+4. Abre tu app en: `https://TU-NOMBRE.onrender.com`
+
+> Si el deploy falla con error `address: '127.0.0.1'`, significa que la DATABASE_URL está mal. Repite los pasos R.5 y R.6.
 
 ---
 
@@ -427,18 +532,135 @@ Tu intranet queda en: `https://tu-dominio.dpdns.org`
 
 ## Backup y Restauración
 
-### Hacer backup:
+### Hacer backup local (en tu PC):
+
 ```
-cd backend
-npm run backup
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica\backend"
 ```
-Genera un archivo JSON en `backend/backups/` con todos los datos.
+
+```
+node scripts/backup.js
+```
+
+Genera un archivo JSON en `backend/backups/` con todos los datos (usuarios, materias, inscripciones, notas).
+
+### Hacer backup de la base de datos de Render (online):
+
+Para hacer backup de la base de datos que está en internet, necesitas la DATABASE_URL de Render:
+
+```
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica\backend"
+```
+
+```
+set DATABASE_URL=PEGA_AQUI_TU_INTERNAL_DATABASE_URL_DE_RENDER
+```
+
+```
+node scripts/backup.js
+```
+
+> Para obtener la URL: ve a tu base de datos en Render → Info → copia la **Internal Database URL**
 
 ### Restaurar backup:
+
+Si querés restaurar en tu PC (local):
 ```
-cd backend
-npm run restore -- backups/nombre-del-archivo.json
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica\backend"
 ```
+
+```
+node scripts/restore.js backups/nombre-del-archivo.json
+```
+
+Si querés restaurar en Render (online):
+```
+set DATABASE_URL=PEGA_AQUI_TU_INTERNAL_DATABASE_URL_DE_RENDER
+```
+
+```
+node scripts/restore.js backups/nombre-del-archivo.json
+```
+
+### Guardar backup en GitHub (para no perderlo):
+
+Después de hacer un backup, subilo a GitHub para tener una copia segura:
+
+```
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica"
+```
+
+```
+git add backend/backups/
+```
+
+```
+git commit -m "Backup de base de datos"
+```
+
+```
+git push
+```
+
+---
+
+## Renovar la base de datos de Render (cada 30 días)
+
+La base de datos gratis de Render **se borra a los 30 días**. Para no perder datos, seguí estos pasos antes de que expire:
+
+### Paso 1: Hacer backup de la base actual
+
+Seguí los pasos de "Hacer backup de la base de datos de Render" de arriba.
+
+### Paso 2: Guardar el backup en GitHub
+
+Seguí los pasos de "Guardar backup en GitHub" de arriba.
+
+### Paso 3: Crear nueva base de datos en Render
+
+1. Ve a **https://dashboard.render.com**
+2. Click en **"New +"** → **"PostgreSQL"**
+3. Pon nombre: `intranet-db` (o `intranet-db-2`, etc.)
+4. Selecciona **Free** tier
+5. Click **Create Database**
+6. Espera a que se cree
+
+### Paso 4: Copiar la nueva Internal Database URL
+
+1. Ve a la nueva base de datos → **Info**
+2. Baja hasta **"Internal Database URL"**
+3. Click en el **botón de copiar** (icono 📋)
+
+### Paso 5: Actualizar la variable en el Web Service
+
+1. Ve a tu Web Service → **Environment**
+2. Busca la variable `DATABASE_URL`
+3. Click en el **lápiz** (editar)
+4. Pega la nueva Internal Database URL en **VALUE**
+5. Click **Save Changes**
+
+### Paso 6: Restaurar los datos
+
+Render va a re-deployar automáticamente. Después de que el deploy termine (estado "Live"), restaurá los datos:
+
+```
+cd "C:\Users\rodol\Downloads\claude video\intranet-academica\backend"
+```
+
+```
+set DATABASE_URL=PEGA_AQUI_LA_NUEVA_INTERNAL_DATABASE_URL
+```
+
+```
+node scripts/restore.js backups/nombre-del-archivo.json
+```
+
+### Paso 7: Borrar la base de datos vieja (opcional)
+
+1. Ve a la base de datos vieja en Render
+2. Settings → **Delete Database**
+
+> ⚠️ Recordatorio: hacé esto **antes** de que pasen los 30 días, o se borra sola y perdés los datos
 
 ---
 
