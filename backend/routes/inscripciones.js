@@ -31,14 +31,19 @@ router.post('/', authMiddleware, requireRole('alumno'), async (req, res) => {
       return res.status(400).json({ error: 'Materia sin cupo disponible' });
     }
 
-    const conflicto = await getOne(`
-      SELECT m.nombre FROM inscripciones i
+    const diasNueva = materia.dia.split(',');
+    const misMateriasActuales = await getAll(`
+      SELECT m.nombre, m.dia, m.hora_inicio, m.hora_fin FROM inscripciones i
       JOIN materias m ON i.materia_id = m.id
-      WHERE i.alumno_id = $1 AND m.dia = $2 AND m.hora_inicio < $3 AND m.hora_fin > $4
-    `, [req.user.id, materia.dia, materia.hora_fin, materia.hora_inicio]);
+      WHERE i.alumno_id = $1
+    `, [req.user.id]);
 
-    if (conflicto) {
-      return res.status(400).json({ error: `Conflicto de horario con "${conflicto.nombre}"` });
+    for (const mat of misMateriasActuales) {
+      const diasExistente = mat.dia.split(',');
+      const diasComunes = diasNueva.filter(d => diasExistente.includes(d));
+      if (diasComunes.length > 0 && mat.hora_inicio < materia.hora_fin && mat.hora_fin > materia.hora_inicio) {
+        return res.status(400).json({ error: `Conflicto de horario con "${mat.nombre}" (${diasComunes.join(', ')})` });
+      }
     }
 
     await runQuery('INSERT INTO inscripciones (alumno_id, materia_id) VALUES ($1, $2)', [req.user.id, materia_id]);

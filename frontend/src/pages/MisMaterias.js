@@ -38,7 +38,7 @@ export default function MisMaterias() {
               <div className="materia-info">
                 <div><strong>Código:</strong> {m.codigo}</div>
                 <div><strong>Profesor:</strong> {m.profesor_nombre ? `${m.profesor_nombre} ${m.profesor_apellido}` : 'Sin asignar'}</div>
-                <div><strong>Horario:</strong> {m.dia} {m.hora_inicio} - {m.hora_fin}</div>
+                <div><strong>Horario:</strong> {m.dia.includes(',') ? m.dia.split(',').map(d => d.slice(0,3)).join(', ') : m.dia} {m.hora_inicio} - {m.hora_fin}</div>
                 <div><strong>Aula:</strong> {m.aula || '-'}</div>
               </div>
               <div className="materia-actions">

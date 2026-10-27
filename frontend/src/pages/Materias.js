@@ -6,7 +6,7 @@ export default function Materias({ user }) {
   const [profesores, setProfesores] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ nombre: '', codigo: '', descripcion: '', profesor_id: '', dia: 'Lunes', hora_inicio: '08:00', hora_fin: '09:30', aula: '', cupo_max: 30 });
+  const [form, setForm] = useState({ nombre: '', codigo: '', descripcion: '', profesor_id: '', dia: '', hora_inicio: '08:00', hora_fin: '09:30', aula: '', cupo_max: 30 });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [misInscritas, setMisInscritas] = useState([]);
@@ -30,6 +30,13 @@ export default function Materias({ user }) {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
+  const toggleDia = (d) => {
+    const current = form.dia ? form.dia.split(',') : [];
+    const updated = current.includes(d) ? current.filter(x => x !== d) : [...current, d];
+    const ordered = dias.filter(dia => updated.includes(dia));
+    setForm({ ...form, dia: ordered.join(',') });
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setError('');
@@ -41,7 +48,7 @@ export default function Materias({ user }) {
       }
       setShowModal(false);
       setEditing(null);
-      setForm({ nombre: '', codigo: '', descripcion: '', profesor_id: '', dia: 'Lunes', hora_inicio: '08:00', hora_fin: '09:30', aula: '', cupo_max: 30 });
+      setForm({ nombre: '', codigo: '', descripcion: '', profesor_id: '', dia: '', hora_inicio: '08:00', hora_fin: '09:30', aula: '', cupo_max: 30 });
       load();
     } catch (err) {
       setError(err.message);
@@ -100,7 +107,7 @@ export default function Materias({ user }) {
             <div className="materia-info">
               <div><strong>Código:</strong> {m.codigo}</div>
               <div><strong>Profesor:</strong> {m.profesor_nombre ? `${m.profesor_nombre} ${m.profesor_apellido}` : 'Sin asignar'}</div>
-              <div><strong>Horario:</strong> {m.dia} {m.hora_inicio} - {m.hora_fin}</div>
+              <div><strong>Horario:</strong> {m.dia.includes(',') ? m.dia.split(',').map(d => d.slice(0,3)).join(', ') : m.dia} {m.hora_inicio} - {m.hora_fin}</div>
               <div><strong>Aula:</strong> {m.aula || '-'}</div>
               <div><strong>Cupo:</strong> {m.inscritos}/{m.cupo_max}</div>
               {m.descripcion && <div style={{marginTop: 6, color: 'var(--text-muted)', fontSize: '0.82rem'}}>{m.descripcion}</div>}
@@ -153,10 +160,15 @@ export default function Materias({ user }) {
                 </select>
               </div>
               <div className="form-group">
-                <label>Día</label>
-                <select value={form.dia} onChange={set('dia')}>
-                  {dias.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <label>Días</label>
+                <div style={{display:'flex', flexWrap:'wrap', gap: 8}}>
+                  {dias.map(d => (
+                    <label key={d} style={{display:'flex', alignItems:'center', gap: 4, cursor:'pointer', padding:'6px 12px', borderRadius: 8, background: form.dia && form.dia.split(',').includes(d) ? 'var(--primary)' : 'var(--bg-card)', border: '1px solid var(--border)', fontSize:'0.85rem', color: form.dia && form.dia.split(',').includes(d) ? '#fff' : 'var(--text-muted)'}}>
+                      <input type="checkbox" checked={form.dia ? form.dia.split(',').includes(d) : false} onChange={() => toggleDia(d)} style={{display:'none'}} />
+                      {d.slice(0,3)}
+                    </label>
+                  ))}
+                </div>
               </div>
               <div style={{display:'flex', gap: 12}}>
                 <div className="form-group" style={{flex:1}}>
