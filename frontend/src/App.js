@@ -23,57 +23,54 @@ function NavLink({ to, icon, children }) {
   );
 }
 
-function Sidebar({ user, onLogout }) {
+function TopNav({ user, onLogout }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const initials = `${(user.nombre || '')[0] || ''}${(user.apellido || '')[0] || ''}`.toUpperCase();
 
   return (
-    <nav className="sidebar">
-      <div className="sidebar-brand">
-        <div className="sidebar-logo">IA</div>
+    <nav className="topnav">
+      <div className="topnav-brand">
+        <div className="topnav-logo">IA</div>
         <div>
-          <h2>Intranet</h2>
-          <small>Académica</small>
+          <h2>Intranet <small>Académica</small></h2>
         </div>
       </div>
 
-      <div className="sidebar-section-label">Académico</div>
-
-      <ul className="nav-links">
+      <ul className={`topnav-links ${menuOpen ? 'active' : ''}`}>
         <NavLink to="/" icon="⌂">Inicio</NavLink>
         {user.rol === 'alumno' && (
           <>
             <NavLink to="/materias" icon="◉">Inscripción</NavLink>
             <NavLink to="/mis-materias" icon="▤">Mis Materias</NavLink>
             <NavLink to="/horario" icon="▦">Horarios</NavLink>
-            <NavLink to="/mis-notas" icon="▥">Boletín de notas</NavLink>
+            <NavLink to="/mis-notas" icon="▥">Notas</NavLink>
           </>
         )}
         {user.rol === 'profesor' && (
           <>
             <NavLink to="/materias" icon="◉">Materias</NavLink>
-            <NavLink to="/notas" icon="▥">Gestión de Notas</NavLink>
+            <NavLink to="/notas" icon="▥">Notas</NavLink>
           </>
         )}
         {user.rol === 'admin' && (
           <>
             <NavLink to="/materias" icon="◉">Materias</NavLink>
             <NavLink to="/usuarios" icon="◎">Usuarios</NavLink>
-            <NavLink to="/notas" icon="▥">Gestión de Notas</NavLink>
+            <NavLink to="/notas" icon="▥">Notas</NavLink>
           </>
         )}
       </ul>
 
-      <button className="btn-logout" onClick={onLogout}>
-        ◇ Cerrar Sesión
-      </button>
-
-      <div className="sidebar-profile">
-        <div className="profile-avatar">{initials}</div>
-        <div className="profile-info">
-          <div className="profile-name">{user.nombre} {user.apellido}</div>
-          <div className="profile-email">{user.email}</div>
+      <div className="topnav-right">
+        <div className="topnav-user">
+          <div className="topnav-avatar">{initials}</div>
+          <div>
+            <div className="topnav-name">{user.nombre} {user.apellido}</div>
+            <div className="topnav-role">{user.rol}</div>
+          </div>
         </div>
-        <span className="profile-badge">{user.rol}</span>
+        <button className="btn-logout-top" onClick={onLogout}>Salir</button>
+        <button className="topnav-toggle" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
       </div>
     </nav>
   );
@@ -105,7 +102,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <Sidebar user={user} onLogout={logout} />
+        <TopNav user={user} onLogout={logout} />
         <main className="content">
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
